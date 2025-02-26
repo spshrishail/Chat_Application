@@ -22,8 +22,7 @@
   ],
   "env": {
     "MONGODB_URI": "@MONGODB_URI",
-    "JWT_SECRET": "@jwt_secret",
-    "PORT": "8080",
-    "FRONTEND_URL": "@frontend_url"
+  "JWT_SECRET": "@JWT_SECRET",
+  "FRONTEND_URL": "@frontend_url"
   }
 } 
