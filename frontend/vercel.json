@@ -19,6 +19,6 @@
     }
   ],
   "env": {
-    "VITE_API_URL": "your-backend-url"
+    "VITE_API_URL": "https://chatbackend-tau.vercel.app"
   }
 } 
