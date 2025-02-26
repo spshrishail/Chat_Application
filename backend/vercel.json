@@ -19,10 +19,5 @@
       "src": "/(.*)",
       "dest": "server.js"
     }
-  ],
-  "env": {
-    "MONGODB_URI": "@MONGODB_URI",
-  "JWT_SECRET": "@JWT_SECRET",
-  "FRONTEND_URL": "@frontend_url"
-  }
+  ]
 } 
