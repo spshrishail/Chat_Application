@@ -14,73 +14,52 @@ const { authenticateToken } = require('./middleware/auth');
 const app = express();
 const server = http.createServer(app);
 
-// Update CORS configuration
+// CORS configuration
 app.use(cors({
   origin: ['https://chatapplication-two-kappa.vercel.app', 'http://localhost:5173'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
 
-// Socket.io setup with correct CORS
-const io = socketIo(server, {
-  cors: {
-    origin: ['https://chatapplication-two-kappa.vercel.app', 'http://localhost:5173'],
-    methods: ['GET', 'POST'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
-  }
-});
-
-// Middleware
+// Body parser
 app.use(express.json());
 
-// Add this middleware before your routes
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'https://chatapplication-two-kappa.vercel.app');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-  next();
+// Basic route to test if server is running
+app.get('/', (req, res) => {
+  res.json({ message: 'Welcome to Chatify API' });
 });
 
-// Add this before your routes
-app.use((req, res, next) => {
-  res.setTimeout(25000, () => {
-    res.status(504).send('Request Timeout');
-  });
-  next();
-});
-
-// Routes
+// API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/messages', authenticateToken, messageRoutes);
 
-// Socket middleware
-io.use((socket, next) => {
-  const token = socket.handshake.auth.token;
-  
-  if (!token) {
-    return next(new Error('Authentication error'));
-  }
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: 'Something went wrong!' });
+});
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    socket.userId = decoded.userId;
-    next();
-  } catch (err) {
-    next(new Error('Authentication error'));
+// MongoDB connection
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log('Connected to MongoDB'))
+.catch(err => console.error('MongoDB connection error:', err));
+
+// Socket.IO setup
+const io = socketIo(server, {
+  cors: {
+    origin: ['https://chatapplication-two-kappa.vercel.app', 'http://localhost:5173'],
+    methods: ['GET', 'POST'],
+    credentials: true
   }
 });
 
-// Socket connection handler
+// Socket.IO connection handling
 io.on('connection', (socket) => {
-  console.log('User connected:', socket.userId);
+  console.log('User connected:', socket.id);
   
   socket.join(socket.userId);
 
@@ -111,30 +90,13 @@ app.use((req, res, next) => {
   next();
 });
 
-// Add this after your routes
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Something broke!');
-});
+const PORT = process.env.PORT || 8080;
 
-const mongoOptions = {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 5000,
-  socketTimeoutMS: 45000,
-  poolSize: 10,
-  maxPoolSize: 50,
-  minPoolSize: 10,
-};
-
-mongoose.connect(process.env.MONGODB_URI, mongoOptions)
-.then(() => {
-  console.log('Connected to MongoDB');
-  server.listen(process.env.PORT || 8080, () => {
-    console.log(`Server running on port ${process.env.PORT || 8080}`);
+if (process.env.NODE_ENV !== 'production') {
+  server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
   });
-})
-.catch(err => console.error('MongoDB connection error:', err));
+}
 
 // Export for Vercel
 module.exports = app; 
