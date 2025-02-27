@@ -14,52 +14,73 @@ const { authenticateToken } = require('./middleware/auth');
 const app = express();
 const server = http.createServer(app);
 
-// CORS configuration
+// Update CORS configuration
 app.use(cors({
   origin: ['https://chatapplication-two-kappa.vercel.app', 'http://localhost:5173'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
 
-// Body parser
-app.use(express.json());
-
-// Basic route to test if server is running
-app.get('/', (req, res) => {
-  res.json({ message: 'Welcome to Chatify API' });
-});
-
-// API routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/messages', authenticateToken, messageRoutes);
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
-});
-
-// MongoDB connection
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('Connected to MongoDB'))
-.catch(err => console.error('MongoDB connection error:', err));
-
-// Socket.IO setup
+// Socket.io setup with correct CORS
 const io = socketIo(server, {
   cors: {
     origin: ['https://chatapplication-two-kappa.vercel.app', 'http://localhost:5173'],
     methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
   }
 });
 
-// Socket.IO connection handling
+// Middleware
+app.use(express.json());
+
+// Add this middleware before your routes
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'https://chatapplication-two-kappa.vercel.app');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
+// Add this before your routes
+app.use((req, res, next) => {
+  res.setTimeout(25000, () => {
+    res.status(504).send('Request Timeout');
+  });
+  next();
+});
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/messages', authenticateToken, messageRoutes);
+
+// Socket middleware
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token;
+  
+  if (!token) {
+    return next(new Error('Authentication error'));
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    socket.userId = decoded.userId;
+    next();
+  } catch (err) {
+    next(new Error('Authentication error'));
+  }
+});
+
+// Socket connection handler
 io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
+  console.log('User connected:', socket.userId);
   
   socket.join(socket.userId);
 
@@ -90,13 +111,26 @@ app.use((req, res, next) => {
   next();
 });
 
-const PORT = process.env.PORT || 8080;
+// Add this after your routes
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
+});
 
-if (process.env.NODE_ENV !== 'production') {
-  server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+// MongoDB connection with timeout settings
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 5000, // Timeout after 5s
+  socketTimeoutMS: 45000, // Close sockets after 45s
+})
+.then(() => {
+  console.log('Connected to MongoDB');
+  server.listen(process.env.PORT || 8080, () => {
+    console.log(`Server running on port ${process.env.PORT || 8080}`);
   });
-}
+})
+.catch(err => console.error('MongoDB connection error:', err));
 
 // Export for Vercel
 module.exports = app; 
