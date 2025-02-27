@@ -48,6 +48,14 @@ app.use((req, res, next) => {
   next();
 });
 
+// Add this before your routes
+app.use((req, res, next) => {
+  res.setTimeout(25000, () => {
+    res.status(504).send('Request Timeout');
+  });
+  next();
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -103,16 +111,30 @@ app.use((req, res, next) => {
   next();
 });
 
-// MongoDB connection
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => {
-    console.log('Connected to MongoDB');
-    const port = process.env.PORT || 8080;
-    server.listen(port, () => {
-      console.log(`Server running on port ${port}`);
-    });
-  })
-  .catch(err => console.error('MongoDB connection error:', err));
+// Add this after your routes
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
+});
+
+const mongoOptions = {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+  poolSize: 10,
+  maxPoolSize: 50,
+  minPoolSize: 10,
+};
+
+mongoose.connect(process.env.MONGODB_URI, mongoOptions)
+.then(() => {
+  console.log('Connected to MongoDB');
+  server.listen(process.env.PORT || 8080, () => {
+    console.log(`Server running on port ${process.env.PORT || 8080}`);
+  });
+})
+.catch(err => console.error('MongoDB connection error:', err));
 
 // Export for Vercel
 module.exports = app; 
