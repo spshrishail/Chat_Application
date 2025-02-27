@@ -16,14 +16,14 @@ const server = http.createServer(app);
 
 // Update CORS configuration for production
 app.use(cors({
-  origin: 'https://chatapplication-two-kappa.vercel.app',
+  origin: process.env.FRONTEND_URL || 'https://chatapplication-two-kappa.vercel.app',
   credentials: true
 }));
 
 // Socket.io setup with correct CORS
 const io = socketIo(server, {
   cors: {
-    origin: 'https://chatapplication-two-kappa.vercel.app/',
+    origin: process.env.FRONTEND_URL || 'https://chatapplication-two-kappa.vercel.app',
     methods: ['GET', 'POST'],
     credentials: true
   }
@@ -103,4 +103,4 @@ mongoose.connect(process.env.MONGODB_URI)
   .catch(err => console.error('MongoDB connection error:', err));
 
 // Export for Vercel
-module.exports = app; 
+module.exports = app;
