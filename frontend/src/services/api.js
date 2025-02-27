@@ -4,6 +4,11 @@ const API_URL = 'https://chatbackend-tau.vercel.app';
 
 const api = axios.create({
   baseURL: API_URL,
+  withCredentials: true,
+  timeout: 25000, // 25 seconds timeout
+  headers: {
+    'Content-Type': 'application/json',
+  }
 });
 
 // Request interceptor for adding auth token
