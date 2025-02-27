@@ -16,14 +16,14 @@ const server = http.createServer(app);
 
 // Update CORS configuration for production
 app.use(cors({
-  origin: 'https://chatbackend-tau.vercel.app',
+  origin: 'https://chatapplication-two-kappa.vercel.app',
   credentials: true
 }));
 
 // Socket.io setup with correct CORS
 const io = socketIo(server, {
   cors: {
-    origin: 'https://chatbackend-tau.vercel.app',
+    origin: 'https://chatapplication-two-kappa.vercel.app/',
     methods: ['GET', 'POST'],
     credentials: true
   }
