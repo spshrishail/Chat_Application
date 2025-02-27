@@ -14,23 +14,39 @@ const { authenticateToken } = require('./middleware/auth');
 const app = express();
 const server = http.createServer(app);
 
-// Update CORS configuration for production
+// Update CORS configuration
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173' || 'https://chatapplication-two-kappa.vercel.app',
+  origin: ['https://chatapplication-two-kappa.vercel.app', 'http://localhost:5173'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
 
 // Socket.io setup with correct CORS
 const io = socketIo(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173' || 'https://chatapplication-two-kappa.vercel.app',
+    origin: ['https://chatapplication-two-kappa.vercel.app', 'http://localhost:5173'],
     methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
   }
 });
 
 // Middleware
 app.use(express.json());
+
+// Add this middleware before your routes
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'https://chatapplication-two-kappa.vercel.app');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
 
 // Routes
 app.use('/api/auth', authRoutes);
