@@ -9,14 +9,24 @@
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "server.js",
-      "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-      "headers": {
-        "Access-Control-Allow-Origin": "https://chatapplication-two-kappa.vercel.app",
-        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-        "Access-Control-Allow-Headers": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization",
-        "Access-Control-Allow-Credentials": "true"
-      }
+      "dest": "server.js"
+    }
+  ],
+  "functions": {
+    "api/**/*.js": {
+      "maxDuration": 30
+    }
+  },
+  "regions": ["dfw1"],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Credentials", "value": "true" },
+        { "key": "Access-Control-Allow-Origin", "value": "https://chatapplication-two-kappa.vercel.app" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
+        { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization" }
+      ]
     }
   ]
 }
