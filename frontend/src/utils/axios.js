@@ -3,15 +3,15 @@ import axios from 'axios';
 const instance = axios.create({
   baseURL: 'https://chatbackend-tau.vercel.app',
   timeout: 30000,
-  withCredentials: true
+  withCredentials: true // Allows cookies to be sent with requests
 });
 
-// Add a request interceptor
+// Request interceptor to attach JWT token to headers
 instance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers.Authorization = `Bearer ${token}`; // Attach token to headers
     }
     return config;
   },
@@ -20,11 +20,12 @@ instance.interceptors.request.use(
   }
 );
 
-// Add a response interceptor
+// Response interceptor to handle 401 errors (unauthorized)
 instance.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      // Handle logout and redirect to login page
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';
@@ -33,4 +34,4 @@ instance.interceptors.response.use(
   }
 );
 
-export default instance; 
+export default instance;
