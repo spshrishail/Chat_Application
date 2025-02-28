@@ -14,24 +14,33 @@ const { authenticateToken } = require('./middleware/auth');
 const app = express();
 const server = http.createServer(app);
 
-// CORS Configuration - Allow only frontend domain
-const allowedOrigins = ['https://chatapplication-two-kappa.vercel.app'];
+// ✅ Updated CORS Configuration
+const corsOptions = {
+  origin: 'https://chatapplication-two-kappa.vercel.app', // Allow only your frontend
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+};
 
-app.use(
-  cors({
-    origin: allowedOrigins,
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-  })
-);
+app.use(cors(corsOptions));
 
-// Socket.io setup with proper CORS
+// ✅ Ensure CORS headers are included in every response
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'https://chatapplication-two-kappa.vercel.app');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
+// ✅ Socket.io setup with proper CORS
 const io = socketIo(server, {
   cors: {
-    origin: allowedOrigins,
+    origin: 'https://chatapplication-two-kappa.vercel.app',
     methods: ['GET', 'POST'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
   },
 });
@@ -48,12 +57,12 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/messages', authenticateToken, messageRoutes);
 
-// Socket.io Authentication Middleware
+// ✅ Socket Middleware
 io.use((socket, next) => {
-  const token = socket.handshake.auth?.token;
-  
+  const token = socket.handshake.auth.token;
+
   if (!token) {
-    return next(new Error('Authentication error - No token provided'));
+    return next(new Error('Authentication error'));
   }
 
   try {
@@ -61,14 +70,13 @@ io.use((socket, next) => {
     socket.userId = decoded.userId;
     next();
   } catch (err) {
-    return next(new Error('Authentication error - Invalid token'));
+    next(new Error('Authentication error'));
   }
 });
 
-// Socket Connection Handler
+// ✅ Socket Connection Handler
 io.on('connection', (socket) => {
-  console.log(`User connected: ${socket.userId}`);
-
+  console.log('User connected:', socket.userId);
   socket.join(socket.userId);
 
   socket.on('send_message', (message) => {
@@ -77,10 +85,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('message_update', ({ messageId, updates, receiverId }) => {
-    io.to(socket.userId).to(receiverId).emit('message_updated', {
-      messageId,
-      updates,
-    });
+    io.to(socket.userId).to(receiverId).emit('message_updated', { messageId, updates });
   });
 
   socket.on('message_like', (data) => {
@@ -89,27 +94,29 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    console.log(`User disconnected: ${socket.userId}`);
+    console.log('User disconnected:', socket.userId);
   });
 });
 
-// Attach io instance to requests
+// ✅ Attach Socket.io to Requests
 app.use((req, res, next) => {
   req.io = io;
   next();
 });
 
-// MongoDB Connection
-mongoose
-  .connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+// ✅ MongoDB Connection with Error Handling
+mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => {
-    console.log('Connected to MongoDB');
+    console.log('✅ Connected to MongoDB');
     const port = process.env.PORT || 8080;
     server.listen(port, () => {
-      console.log(`Server running on port ${port}`);
+      console.log(`🚀 Server running on port ${port}`);
     });
   })
-  .catch((err) => console.error('MongoDB connection error:', err));
+  .catch(err => {
+    console.error('❌ MongoDB connection error:', err);
+    process.exit(1); // Exit process if DB connection fails
+  });
 
-// Export for Vercel Deployment
+// ✅ Export for Vercel Deployment
 module.exports = app;
