@@ -14,9 +14,9 @@ const { authenticateToken } = require('./middleware/auth');
 const app = express();
 const server = http.createServer(app);
 
-// ✅ Updated CORS Configuration
+// ✅ CORS Configuration
 const corsOptions = {
-  origin: 'https://chatapplication-two-kappa.vercel.app', // Allow only your frontend
+  origin: ['https://chatapplication-two-kappa.vercel.app'], // Your frontend URL
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
@@ -24,19 +24,22 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// ✅ Ensure CORS headers are included in every response
+// ✅ Manually Ensure CORS Headers Are Included
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'https://chatapplication-two-kappa.vercel.app');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.header('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Origin', 'https://chatapplication-two-kappa.vercel.app');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  
+  // Handle preflight requests
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
+  
   next();
 });
 
-// ✅ Socket.io setup with proper CORS
+// ✅ Socket.io Setup with CORS Fix
 const io = socketIo(server, {
   cors: {
     origin: 'https://chatapplication-two-kappa.vercel.app',
@@ -57,7 +60,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/messages', authenticateToken, messageRoutes);
 
-// ✅ Socket Middleware
+// ✅ Ensure Socket Authentication
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;
 
@@ -74,7 +77,7 @@ io.use((socket, next) => {
   }
 });
 
-// ✅ Socket Connection Handler
+// ✅ Socket Connection Handling
 io.on('connection', (socket) => {
   console.log('User connected:', socket.userId);
   socket.join(socket.userId);
@@ -104,7 +107,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// ✅ MongoDB Connection with Error Handling
+// ✅ MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => {
     console.log('✅ Connected to MongoDB');
@@ -115,8 +118,8 @@ mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTop
   })
   .catch(err => {
     console.error('❌ MongoDB connection error:', err);
-    process.exit(1); // Exit process if DB connection fails
+    process.exit(1);
   });
 
-// ✅ Export for Vercel Deployment
+// ✅ Export for Vercel
 module.exports = app;
