@@ -15,10 +15,7 @@ const app = express();
 const server = http.createServer(app);
 
 // Update CORS configuration for production
-app.use(cors({
-  origin: '*',
-  credentials: true
-}));
+app.use(cors());
 
 // Socket.io setup with correct CORS
 const io = socketIo(server, {
