@@ -9,6 +9,7 @@ export default defineConfig({
       '/api': {
         target: 'https://chatbackend-tau.vercel.app',
         secure: true,
+        timeout: 60000
       },
     },
   },
