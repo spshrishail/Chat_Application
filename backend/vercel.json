@@ -1,10 +1,11 @@
 {
   "version": 2,
-  "functions": {
-    "api/*": {
-      "maxDuration": 30
+  "builds": [
+    {
+      "src": "server.js",
+      "use": "@vercel/node"
     }
-  },
+  ],
   "rewrites": [
     {
       "source": "/socket.io/(.*)",
@@ -19,6 +20,11 @@
       "destination": "/server.js"
     }
   ],
+  "functions": {
+    "api/*": {
+      "maxDuration": 30
+    }
+  },
   "headers": [
     {
       "source": "/api/(.*)",
