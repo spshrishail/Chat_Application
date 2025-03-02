@@ -8,9 +8,7 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 'https://chatbackend-tau.vercel.app',
-        changeOrigin: true,
         secure: true,
-        
       },
     },
   },
