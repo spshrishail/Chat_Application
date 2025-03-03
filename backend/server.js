@@ -15,12 +15,16 @@ const app = express();
 const server = http.createServer(app);
 
 // Update CORS configuration for production
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:5173',
+  methods: ['GET', 'POST'],
+  credentials: true
+}));
 
 // Socket.io setup with correct CORS
 const io = socketIo(server, {
   cors: {
-    origin: '*',
+    origin: 'http://localhost:5173',
     methods: ['GET', 'POST'],
     credentials: true
   }

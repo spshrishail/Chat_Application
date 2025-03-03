@@ -112,11 +112,12 @@ const Login = () => {
   const onSubmit = async (data) => {
     const loadingToast = toast.loading("Signing in...");
     try {
+      console.log("Attempting to log in with:", data);
       if (!data.email || !data.password) {
         throw new Error("Email and password are required");
       }
 
-      const response = await axios.post('https://chatbackend-tau.vercel.app/api/auth/login', data);
+      const response = await axios.post('http://localhost:8080/api/auth/login', data);
       
       if (!response.data || !response.data.token || !response.data.user) {
         throw new Error("Invalid response from server");
@@ -147,6 +148,7 @@ const Login = () => {
       navigate('/');
     } catch (err) {
       console.error('Login error:', err);
+      console.error('Error response:', err.response);
       const errorMessage = err.response?.data?.message || err.message || "Login failed. Please try again.";
       
       toast.update(loadingToast, {

@@ -54,7 +54,12 @@ exports.loginUser = async (req, res) => {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
 
-    if (user && (await bcrypt.compare(password, user.password))) {
+    if (!user) {
+      console.error('Login attempt with non-existent email:', email);
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    if (user && (await user.matchPassword(password))) {
       res.json({
         _id: user._id,
         name: user.name,
@@ -63,9 +68,11 @@ exports.loginUser = async (req, res) => {
         token: generateToken(user._id)
       });
     } else {
+      console.error('Password mismatch for email:', email);
       res.status(401).json({ message: "Invalid email or password" });
     }
   } catch (error) {
+    console.error('Login error:', error);
     res.status(500).json({ message: error.message });
   }
 };

@@ -163,7 +163,7 @@ const Register = () => {
       };
       delete formData.confirmPassword;
 
-      const response = await axios.post('https://chatbackend-tau.vercel.app/api/auth/register', formData);
+      const response = await axios.post('http://localhost:8080/api/auth/register', formData);
       const { token, user } = response.data;
       
       // Store token and user data

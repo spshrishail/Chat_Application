@@ -5,21 +5,42 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { authenticateToken } = require('../middleware/auth');
 
-// Login route
+// Helper function for input validation
+const validateEmail = (email) => {
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(String(email).toLowerCase());
+};
+
+// ✅ Login Route
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Find user
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+    // Input validation
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
+    if (!validateEmail(email)) {
+      return res.status(400).json({ message: 'Invalid email format' });
     }
 
+    // Find user
+    const user = await User.findOne({ email });
+    console.log('User found:', user); // Log the user object for debugging
+
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+
+    // Trim whitespace from password
+    const trimmedPassword = password.trim();
+
     // Check password
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await user.matchPassword(trimmedPassword);
+    console.log('Password match:', isMatch); // Log the password comparison result
+
     if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ message: 'Invalid email or password' });
     }
 
     // Generate token
@@ -44,10 +65,18 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Register route
+// ✅ Register Route
 router.post('/register', async (req, res) => {
   try {
     const { name, email, password } = req.body;
+
+    // Input validation
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: 'Name, email, and password are required' });
+    }
+    if (!validateEmail(email)) {
+      return res.status(400).json({ message: 'Invalid email format' });
+    }
 
     // Check if user exists
     let user = await User.findOne({ email });
@@ -59,7 +88,7 @@ router.post('/register', async (req, res) => {
     user = new User({
       name,
       email,
-      password: await bcrypt.hash(password, 10)
+      password: await bcrypt.hash(password, 10) // Hash the password before saving
     });
 
     await user.save();
@@ -86,7 +115,7 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// Verify token route
+// ✅ Verify Token Route
 router.get('/verify', authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.userId).select('-password');

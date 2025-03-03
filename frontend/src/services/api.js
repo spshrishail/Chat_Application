@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'https://chatbackend-tau.vercel.app';
+const API_URL = 'http://localhost:8080';
 
 const api = axios.create({
   baseURL: API_URL,
