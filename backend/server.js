@@ -16,7 +16,7 @@ const server = http.createServer(app);
 
 // Update CORS configuration for production
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: 'https://chatapplication-two-kappa.vercel.app',
   methods: ['GET', 'POST'],
   credentials: true
 }));
@@ -24,7 +24,7 @@ app.use(cors({
 // Socket.io setup with correct CORS
 const io = socketIo(server, {
   cors: {
-    origin: 'http://localhost:5173',
+    origin: 'https://chatapplication-two-kappa.vercel.app',
     methods: ['GET', 'POST'],
     credentials: true
   }

@@ -117,7 +117,7 @@ const Login = () => {
         throw new Error("Email and password are required");
       }
 
-      const response = await axios.post('http://localhost:8080/api/auth/login', data);
+      const response = await axios.post('https://chatbackend-tau.vercel.app/api/auth/login', data);
       
       if (!response.data || !response.data.token || !response.data.user) {
         throw new Error("Invalid response from server");
